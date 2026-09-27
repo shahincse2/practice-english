@@ -7,19 +7,43 @@ class AppTheme {
   static const secondaryText = Color(0xFF667085);
 
   static ThemeData light() {
+    return _base(
+      Brightness.light,
+      background,
+      text,
+      secondaryText,
+    );
+  }
+
+  static ThemeData dark() {
+    return _base(
+      Brightness.dark,
+      const Color(0xFF121715),
+      Colors.white,
+      const Color(0xFFB8C1BC),
+    );
+  }
+
+  static ThemeData _base(
+      Brightness brightness,
+      Color background,
+      Color text,
+      Color secondaryText,
+      ) {
     return ThemeData(
       useMaterial3: true,
+      brightness: brightness,
       scaffoldBackgroundColor: background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
-        brightness: Brightness.light,
+        brightness: brightness,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: background,
         foregroundColor: text,
         elevation: 0,
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w700,
@@ -30,8 +54,14 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: text,
         ),
-        bodyLarge: TextStyle(fontSize: 16, color: text),
-        bodyMedium: TextStyle(fontSize: 14, color: secondaryText),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          color: text,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          color: secondaryText,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

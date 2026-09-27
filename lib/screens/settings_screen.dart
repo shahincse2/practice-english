@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../app/app.dart';
 import '../core/services/answer_sound_service.dart';
 import '../core/services/audio_settings_service.dart';
 import '../core/services/text_to_speech_service.dart';
+import '../models/app_theme_mode.dart';
 import '../models/audio_settings.dart';
 import '../widgets/audio_setting_card.dart';
 import '../widgets/voice_carousel.dart';
 
-class AudioSettingsScreen extends StatefulWidget {
-  const AudioSettingsScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
 
   @override
-  State<AudioSettingsScreen> createState() => _AudioSettingsScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> {
   final _store = AudioSettingsService();
   final _tts = TextToSpeechService();
   final _sounds = AnswerSoundService();
@@ -34,7 +36,6 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
     final settings = await _store.load();
     await _tts.initialize();
     await _sounds.initialize();
-
     final voices = await _tts.getEnglishVoices();
 
     if (!mounted) return;
@@ -71,9 +72,9 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   }
 
   Future<void> _update(
-    AudioSettings settings, {
-    bool previewSpeech = false,
-  }) async {
+      AudioSettings settings, {
+        bool previewSpeech = false,
+      }) async {
     setState(() => _settings = settings);
     await _store.save(settings);
     await _tts.applySettings(settings);
@@ -110,11 +111,16 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Audio Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        actions: [_themeButton()],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
@@ -156,6 +162,40 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
     );
   }
 
+  Widget _themeButton() {
+    return PopupMenuButton<AppThemeMode>(
+      initialValue: EnglishPracticeApp.themeController.mode,
+      icon: const Icon(Icons.brightness_6_rounded),
+      onSelected: EnglishPracticeApp.themeController.setMode,
+      itemBuilder: (_) => AppThemeMode.values.map((mode) {
+        final selected = mode == EnglishPracticeApp.themeController.mode;
+
+        return PopupMenuItem(
+          value: mode,
+          child: Row(
+            children: [
+              Icon(_themeIcon(mode), size: 20),
+              const SizedBox(width: 12),
+              Expanded(child: Text(mode.label)),
+              if (selected) const Icon(Icons.check_rounded, size: 20),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  IconData _themeIcon(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.system:
+        return Icons.brightness_auto_rounded;
+      case AppThemeMode.light:
+        return Icons.light_mode_rounded;
+      case AppThemeMode.dark:
+        return Icons.dark_mode_rounded;
+    }
+  }
+
   Widget _speedSection() {
     return AudioSettingCard(
       title: 'Speech Speed',
@@ -166,7 +206,10 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
         max: 0.8,
         divisions: 12,
         onChanged: (value) {
-          _update(_settings.copyWith(speechRate: value), previewSpeech: true);
+          _update(
+            _settings.copyWith(speechRate: value),
+            previewSpeech: true,
+          );
         },
       ),
     );
@@ -195,15 +238,18 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
 
   Widget _speechSlider() {
     return _soundSlider('Speech', _settings.speechVolume, (value) {
-      _update(_settings.copyWith(speechVolume: value), previewSpeech: true);
+      _update(
+        _settings.copyWith(speechVolume: value),
+        previewSpeech: true,
+      );
     });
   }
 
   Widget _soundSlider(
-    String title,
-    double value,
-    ValueChanged<double> onChanged,
-  ) {
+      String title,
+      double value,
+      ValueChanged<double> onChanged,
+      ) {
     return Column(
       children: [
         ListTile(
