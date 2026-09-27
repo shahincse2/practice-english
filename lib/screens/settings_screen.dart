@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../app/app.dart';
 import '../core/services/answer_sound_service.dart';
 import '../core/services/audio_settings_service.dart';
 import '../core/services/text_to_speech_service.dart';
-import '../models/app_theme_mode.dart';
 import '../models/audio_settings.dart';
-import '../widgets/audio_setting_card.dart';
+import '../widgets/settings_audio_section.dart';
+import '../widgets/theme_menu.dart';
 import '../widgets/voice_carousel.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,10 +19,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _store = AudioSettingsService();
   final _tts = TextToSpeechService();
   final _sounds = AnswerSoundService();
-  final _pageController = PageController();
 
   AudioSettings _settings = const AudioSettings();
   List<Map<String, String>> _voices = [];
+  int _currentVoiceIndex = 0;
   bool _loading = true;
 
   @override
@@ -34,15 +33,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _load() async {
     final settings = await _store.load();
+
     await _tts.initialize();
     await _sounds.initialize();
+
     final voices = await _tts.getEnglishVoices();
 
     if (!mounted) return;
 
+    final selectedIndex = voices.indexWhere(
+      (voice) => voice['name'] == settings.voiceName,
+    );
+
     setState(() {
       _settings = settings;
       _voices = voices;
+      _currentVoiceIndex = selectedIndex >= 0 ? selectedIndex : 0;
       _loading = false;
     });
   }
@@ -57,8 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _selectCurrentVoice() async {
     if (_voices.isEmpty) return;
 
-    final index = _pageController.page?.round() ?? 0;
-    final voice = _voices[index];
+    final voice = _voices[_currentVoiceIndex];
 
     final settings = _settings.copyWith(
       voiceName: voice['name'],
@@ -68,14 +73,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _store.save(settings);
     await _tts.applySettings(settings);
 
-    if (mounted) setState(() => _settings = settings);
+    if (mounted) {
+      setState(() => _settings = settings);
+    }
   }
 
   Future<void> _update(
-      AudioSettings settings, {
-        bool previewSpeech = false,
-      }) async {
+    AudioSettings settings, {
+    bool previewSpeech = false,
+  }) async {
     setState(() => _settings = settings);
+
     await _store.save(settings);
     await _tts.applySettings(settings);
 
@@ -86,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _changeCorrectVolume(double value) async {
     final settings = _settings.copyWith(correctVolume: value);
+
     setState(() => _settings = settings);
     await _store.save(settings);
     await _sounds.setCorrectVolume(value);
@@ -94,6 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _changeWrongVolume(double value) async {
     final settings = _settings.copyWith(wrongVolume: value);
+
     setState(() => _settings = settings);
     await _store.save(settings);
     await _sounds.setWrongVolume(value);
@@ -102,7 +112,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    _pageController.dispose();
     _tts.dispose();
     _sounds.dispose();
     super.dispose();
@@ -111,15 +120,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        actions: [_themeButton()],
+        actions: const [ThemeMenu()],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -138,9 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             )
           else ...[
             VoiceCarousel(
-              controller: _pageController,
               voices: _voices,
               selectedName: _settings.voiceName,
+              onPageChanged: (index) {
+                _currentVoiceIndex = index;
+              },
               onPreview: _preview,
             ),
             const SizedBox(height: 12),
@@ -154,111 +163,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
           const SizedBox(height: 20),
-          _speedSection(),
-          const SizedBox(height: 16),
-          _volumeSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _themeButton() {
-    return PopupMenuButton<AppThemeMode>(
-      initialValue: EnglishPracticeApp.themeController.mode,
-      icon: const Icon(Icons.brightness_6_rounded),
-      onSelected: EnglishPracticeApp.themeController.setMode,
-      itemBuilder: (_) => AppThemeMode.values.map((mode) {
-        final selected = mode == EnglishPracticeApp.themeController.mode;
-
-        return PopupMenuItem(
-          value: mode,
-          child: Row(
-            children: [
-              Icon(_themeIcon(mode), size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(mode.label)),
-              if (selected) const Icon(Icons.check_rounded, size: 20),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  IconData _themeIcon(AppThemeMode mode) {
-    switch (mode) {
-      case AppThemeMode.system:
-        return Icons.brightness_auto_rounded;
-      case AppThemeMode.light:
-        return Icons.light_mode_rounded;
-      case AppThemeMode.dark:
-        return Icons.dark_mode_rounded;
-    }
-  }
-
-  Widget _speedSection() {
-    return AudioSettingCard(
-      title: 'Speech Speed',
-      value: _settings.speechRate.toStringAsFixed(2),
-      child: Slider(
-        value: _settings.speechRate,
-        min: 0.2,
-        max: 0.8,
-        divisions: 12,
-        onChanged: (value) {
-          _update(
-            _settings.copyWith(speechRate: value),
-            previewSpeech: true,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _volumeSection() {
-    return AudioSettingCard(
-      title: 'Volume',
-      child: Column(
-        children: [
-          _speechSlider(),
-          _soundSlider(
-            'Correct Sound',
-            _settings.correctVolume,
-            _changeCorrectVolume,
-          ),
-          _soundSlider(
-            'Wrong Sound',
-            _settings.wrongVolume,
-            _changeWrongVolume,
+          SettingsAudioSection(
+            settings: _settings,
+            onSettingsChanged: _update,
+            onCorrectVolumeChanged: _changeCorrectVolume,
+            onWrongVolumeChanged: _changeWrongVolume,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _speechSlider() {
-    return _soundSlider('Speech', _settings.speechVolume, (value) {
-      _update(
-        _settings.copyWith(speechVolume: value),
-        previewSpeech: true,
-      );
-    });
-  }
-
-  Widget _soundSlider(
-      String title,
-      double value,
-      ValueChanged<double> onChanged,
-      ) {
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(title),
-          trailing: Text('${(value * 100).round()}%'),
-        ),
-        Slider(value: value, onChanged: onChanged),
-      ],
     );
   }
 }
