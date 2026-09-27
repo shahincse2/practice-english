@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/theme_controller.dart';
 import '../models/app_theme_mode.dart';
-import '../screens/home_screen.dart';
+import '../screens/main_navigation_screen.dart';
 import 'app_theme.dart';
 
 class EnglishPracticeApp extends StatelessWidget {
@@ -21,7 +21,7 @@ class EnglishPracticeApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: _themeMode,
-          home: const HomeScreen(),
+          home: const MainNavigationScreen(),
         );
       },
     );

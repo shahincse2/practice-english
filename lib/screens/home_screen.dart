@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'settings_screen.dart';
 import 'practice_setup_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -10,12 +9,6 @@ class HomeScreen extends StatelessWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const PracticeSetupScreen()));
-  }
-
-  void _openSettings(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
   }
 
   @override
@@ -60,15 +53,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                 ],
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                tooltip: 'Audio Settings',
-                onPressed: () => _openSettings(context),
-                icon: const Icon(Icons.settings_outlined),
               ),
             ),
           ],
