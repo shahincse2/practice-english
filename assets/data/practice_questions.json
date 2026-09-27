@@ -1,0 +1,253 @@
+[
+  {
+    "id": "kids_nursery_word_001",
+    "segment": "kids",
+    "level": "nursery",
+    "type": "word",
+    "answer": "A"
+  },
+  {
+    "id": "kids_nursery_word_002",
+    "segment": "kids",
+    "level": "nursery",
+    "type": "word",
+    "answer": "B"
+  },
+  {
+    "id": "kids_nursery_word_003",
+    "segment": "kids",
+    "level": "nursery",
+    "type": "word",
+    "answer": "C"
+  },
+  {
+    "id": "kids_nursery_word_004",
+    "segment": "kids",
+    "level": "nursery",
+    "type": "word",
+    "answer": "D"
+  },
+  {
+    "id": "kids_nursery_word_005",
+    "segment": "kids",
+    "level": "nursery",
+    "type": "word",
+    "answer": "E"
+  },
+
+  {
+    "id": "kids_kg_word_001",
+    "segment": "kids",
+    "level": "kg",
+    "type": "word",
+    "answer": "apple"
+  },
+  {
+    "id": "kids_kg_word_002",
+    "segment": "kids",
+    "level": "kg",
+    "type": "word",
+    "answer": "ball"
+  },
+  {
+    "id": "kids_kg_word_003",
+    "segment": "kids",
+    "level": "kg",
+    "type": "word",
+    "answer": "cat"
+  },
+  {
+    "id": "kids_kg_word_004",
+    "segment": "kids",
+    "level": "kg",
+    "type": "word",
+    "answer": "dog"
+  },
+  {
+    "id": "kids_kg_word_005",
+    "segment": "kids",
+    "level": "kg",
+    "type": "word",
+    "answer": "fish"
+  },
+
+  {
+    "id": "kids_class1_phrase_001",
+    "segment": "kids",
+    "level": "class1",
+    "type": "phrase",
+    "answer": "A for Apple"
+  },
+  {
+    "id": "kids_class1_phrase_002",
+    "segment": "kids",
+    "level": "class1",
+    "type": "phrase",
+    "answer": "Big red ball"
+  },
+  {
+    "id": "kids_class1_phrase_003",
+    "segment": "kids",
+    "level": "class1",
+    "type": "phrase",
+    "answer": "My little cat"
+  },
+  {
+    "id": "kids_class1_phrase_004",
+    "segment": "kids",
+    "level": "class1",
+    "type": "phrase",
+    "answer": "A blue sky"
+  },
+  {
+    "id": "kids_class1_phrase_005",
+    "segment": "kids",
+    "level": "class1",
+    "type": "phrase",
+    "answer": "Good morning teacher"
+  },
+
+  {
+    "id": "kids_class5_sentence_001",
+    "segment": "kids",
+    "level": "class5",
+    "type": "sentence",
+    "answer": "This is a beautiful garden"
+  },
+  {
+    "id": "kids_class5_sentence_002",
+    "segment": "kids",
+    "level": "class5",
+    "type": "sentence",
+    "answer": "I go to school every morning"
+  },
+  {
+    "id": "kids_class5_sentence_003",
+    "segment": "kids",
+    "level": "class5",
+    "type": "sentence",
+    "answer": "My mother cooks delicious food"
+  },
+  {
+    "id": "kids_class5_sentence_004",
+    "segment": "kids",
+    "level": "class5",
+    "type": "sentence",
+    "answer": "The sun rises in the east"
+  },
+  {
+    "id": "kids_class5_sentence_005",
+    "segment": "kids",
+    "level": "class5",
+    "type": "sentence",
+    "answer": "We should always speak the truth"
+  },
+
+  {
+    "id": "school_class6_sentence_001",
+    "segment": "school",
+    "level": "class6",
+    "type": "sentence",
+    "answer": "I go to school every morning"
+  },
+  {
+    "id": "school_class6_sentence_002",
+    "segment": "school",
+    "level": "class6",
+    "type": "sentence",
+    "answer": "Our teacher explains the lesson clearly"
+  },
+  {
+    "id": "school_class6_sentence_003",
+    "segment": "school",
+    "level": "class6",
+    "type": "sentence",
+    "answer": "Reading books improves our knowledge"
+  },
+  {
+    "id": "school_class6_sentence_004",
+    "segment": "school",
+    "level": "class6",
+    "type": "sentence",
+    "answer": "We should keep our classroom clean"
+  },
+  {
+    "id": "school_class6_sentence_005",
+    "segment": "school",
+    "level": "class6",
+    "type": "sentence",
+    "answer": "Regular practice helps us learn better"
+  },
+
+  {
+    "id": "school_class10_sentence_001",
+    "segment": "school",
+    "level": "class10",
+    "type": "sentence",
+    "answer": "Education is important for everyone"
+  },
+  {
+    "id": "school_class10_sentence_002",
+    "segment": "school",
+    "level": "class10",
+    "type": "sentence",
+    "answer": "Hard work is the key to success"
+  },
+  {
+    "id": "school_class10_sentence_003",
+    "segment": "school",
+    "level": "class10",
+    "type": "sentence",
+    "answer": "Technology has changed our daily life"
+  },
+  {
+    "id": "school_class10_sentence_004",
+    "segment": "school",
+    "level": "class10",
+    "type": "sentence",
+    "answer": "We must protect the environment"
+  },
+  {
+    "id": "school_class10_sentence_005",
+    "segment": "school",
+    "level": "class10",
+    "type": "sentence",
+    "answer": "Good communication is important in life"
+  },
+
+  {
+    "id": "academic_hsc_sentence_001",
+    "segment": "academic",
+    "level": "hsc",
+    "type": "sentence",
+    "answer": "Practice makes a person better"
+  },
+  {
+    "id": "academic_hsc_sentence_002",
+    "segment": "academic",
+    "level": "hsc",
+    "type": "sentence",
+    "answer": "Critical thinking helps us solve problems"
+  },
+  {
+    "id": "academic_hsc_sentence_003",
+    "segment": "academic",
+    "level": "hsc",
+    "type": "sentence",
+    "answer": "Knowledge gives us the power to learn"
+  },
+  {
+    "id": "academic_hsc_sentence_004",
+    "segment": "academic",
+    "level": "hsc",
+    "type": "sentence",
+    "answer": "Students should develop good study habits"
+  },
+  {
+    "id": "academic_hsc_sentence_005",
+    "segment": "academic",
+    "level": "hsc",
+    "type": "sentence",
+    "answer": "Education plays an important role in society"
+  }
+]

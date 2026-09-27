@@ -1,1 +1,1 @@
-enum PracticeType { word, twoWords, sentence }
+enum PracticeType { word, phrase, sentence }

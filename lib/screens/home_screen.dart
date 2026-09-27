@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'practice_screen.dart';
+import 'audio_settings_screen.dart';
+import 'practice_setup_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -8,7 +9,13 @@ class HomeScreen extends StatelessWidget {
   void _startPractice(BuildContext context) {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const PracticeScreen()));
+    ).push(MaterialPageRoute(builder: (_) => const PracticeSetupScreen()));
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AudioSettingsScreen()));
   }
 
   @override
@@ -17,51 +24,54 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-
-              Center(
-                child: Icon(
-                  Icons.record_voice_over_rounded,
-                  size: 72,
-                  color: theme.colorScheme.primary,
-                ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  Center(
+                    child: Icon(
+                      Icons.record_voice_over_rounded,
+                      size: 72,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'English Practice',
+                    style: theme.textTheme.headlineMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Listen carefully and type what you hear.',
+                    style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 28),
+                  _InstructionCard(theme: theme),
+                  const Spacer(),
+                  FilledButton(
+                    onPressed: () => _startPractice(context),
+                    child: const Text('Start Practice'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
-
-              const SizedBox(height: 28),
-
-              Text(
-                'English Practice',
-                style: theme.textTheme.headlineMedium,
-                textAlign: TextAlign.center,
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                tooltip: 'Audio Settings',
+                onPressed: () => _openSettings(context),
+                icon: const Icon(Icons.settings_outlined),
               ),
-
-              const SizedBox(height: 12),
-
-              Text(
-                'Listen carefully and type what you hear.',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 28),
-
-              _InstructionCard(theme: theme),
-
-              const Spacer(),
-
-              FilledButton(
-                onPressed: () => _startPractice(context),
-                child: const Text('Start Practice'),
-              ),
-
-              const SizedBox(height: 12),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

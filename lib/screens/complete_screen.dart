@@ -1,10 +1,45 @@
 import 'package:flutter/material.dart';
 
-class CompleteScreen extends StatelessWidget {
+import '../core/services/answer_sound_service.dart';
+import 'practice_screen.dart';
+
+class CompleteScreen extends StatefulWidget {
   const CompleteScreen({super.key});
 
   @override
+  State<CompleteScreen> createState() => _CompleteScreenState();
+}
+
+class _CompleteScreenState extends State<CompleteScreen> {
+  final AnswerSoundService _answerSound = AnswerSoundService();
+
+  @override
+  void initState() {
+    super.initState();
+    _playCheering();
+  }
+
+  Future<void> _playCheering() async {
+    await _answerSound.initialize();
+    await _answerSound.playCheering();
+  }
+
+  void _practiceAgain() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const PracticeScreen()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _answerSound.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -16,7 +51,7 @@ class CompleteScreen extends StatelessWidget {
                 Icon(
                   Icons.check_circle_rounded,
                   size: 72,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -34,11 +69,7 @@ class CompleteScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const Placeholder()),
-                      );
-                    },
+                    onPressed: _practiceAgain,
                     child: const Text('Practice Again'),
                   ),
                 ),

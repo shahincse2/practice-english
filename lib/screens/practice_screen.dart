@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../core/services/text_to_speech_service.dart';
-import '../data/practice_data.dart';
-import '../models/practice_question.dart';
-import '../models/practice_type.dart';
+import '../controllers/practice_controller.dart';
+import '../data/datasources/json_practice_data_source.dart';
+import '../data/repositories/practice_repository_impl.dart';
 import '../widgets/answer_result.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/practice_header.dart';
@@ -11,217 +10,153 @@ import '../widgets/practice_inputs.dart';
 import 'complete_screen.dart';
 
 class PracticeScreen extends StatefulWidget {
-  const PracticeScreen({super.key});
+  const PracticeScreen({super.key, this.segment, this.level});
+
+  final String? segment;
+  final String? level;
 
   @override
   State<PracticeScreen> createState() => _PracticeScreenState();
 }
 
 class _PracticeScreenState extends State<PracticeScreen> {
-  final TextToSpeechService _tts = TextToSpeechService();
-
-  int _questionIndex = 0;
-  bool _checked = false;
-  bool _correct = false;
-
-  List<TextEditingController> _controllers = [];
-  List<FocusNode> _focusNodes = [];
-
-  PracticeQuestion get _question => practiceQuestions[_questionIndex];
+  late final PracticeController _controller;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _createInputs();
-    _initializeTts();
-  }
 
-  void _createInputs() {
-    _disposeInputs();
-
-    _controllers = List.generate(
-      _question.words.length,
-      (_) => TextEditingController(),
+    _controller = PracticeController(
+      PracticeRepositoryImpl(const JsonPracticeDataSource()),
     );
 
-    _focusNodes = List.generate(_question.words.length, (_) => FocusNode());
+    _initialize();
   }
 
-  void _focusFirstInput() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _focusNodes.isEmpty) {
-        return;
-      }
+  Future<void> _initialize() async {
+    await _controller.initialize(segment: widget.segment, level: widget.level);
 
-      _focusNodes.first.requestFocus();
+    if (!mounted) return;
+
+    setState(() {
+      _loading = false;
     });
-  }
 
-  Future<void> _initializeTts() async {
-    final ready = await _tts.initialize();
-
-    if (!ready || !mounted) {
-      return;
+    if (_controller.hasQuestions) {
+      _controller.focusFirstInput();
     }
-
-    await _tts.speak(_question.answer);
-  }
-
-  String _typeTitle() {
-    switch (_question.type) {
-      case PracticeType.word:
-        return 'WORD';
-      case PracticeType.twoWords:
-        return 'TWO WORDS';
-      case PracticeType.sentence:
-        return 'SENTENCE';
-    }
-  }
-
-  bool _allInputsFilled() {
-    for (var i = 0; i < _question.words.length; i++) {
-      if (_controllers[i].text.length != _question.words[i].length) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  bool _isCorrectAnswer() {
-    for (var i = 0; i < _question.words.length; i++) {
-      final expected = _question.words[i].toLowerCase();
-      final actual = _controllers[i].text.trim().toLowerCase();
-
-      if (expected != actual) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  void _handleChanged(int index, String value) {
-    // একটি word পূর্ণ হলেও আর automatic next focus হবে না।
-  }
-
-  Future<void> _handleSpacePressed(int index) async {
-    if (_correct) {
-      return;
-    }
-
-    final currentWord = _question.words[index];
-
-    // বর্তমান word পূর্ণ না হলে Spacebar দিয়ে সামনে যাওয়া যাবে না।
-    if (_controllers[index].text.length != currentWord.length) {
-      return;
-    }
-
-    // শেষ slot হলে এবং সব input পূর্ণ থাকলে answer check হবে।
-    if (index >= _focusNodes.length - 1) {
-      if (_allInputsFilled()) {
-        await _checkFromKeyboard();
-      }
-
-      return;
-    }
-
-    // পরের slot-এ focus।
-    _focusNodes[index + 1].requestFocus();
-  }
-
-  Future<void> _handleSubmitted(int index, String value) async {
-    if (!_allInputsFilled()) {
-      if (index < _focusNodes.length - 1) {
-        _focusNodes[index + 1].requestFocus();
-      }
-
-      return;
-    }
-
-    await _checkFromKeyboard();
   }
 
   Future<void> _checkAnswer() async {
-    FocusScope.of(context).unfocus();
+    await _controller.checkAnswer();
 
-    final correct = _isCorrectAnswer();
+    if (!mounted) return;
 
-    setState(() {
-      _checked = true;
-      _correct = correct;
-    });
+    setState(() {});
 
-    if (correct) {
+    if (_controller.correct) {
       await Future<void>.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
-        await _nextQuestion();
+        await _goNext();
       }
     }
   }
 
-  Future<void> _checkFromKeyboard() async {
-    if (!_allInputsFilled()) {
-      return;
-    }
-
-    await _checkAnswer();
-  }
-
-  Future<void> _nextQuestion() async {
-    await _tts.stop();
-
-    if (_questionIndex >= practiceQuestions.length - 1) {
-      if (!mounted) {
-        return;
-      }
-
+  Future<void> _goNext() async {
+    if (_controller.index >= _controller.questions.length - 1) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const CompleteScreen()),
       );
-
       return;
     }
 
-    setState(() {
-      _questionIndex++;
-      _checked = false;
-      _correct = false;
-      _createInputs();
-    });
+    await _controller.nextQuestion();
 
-    _focusFirstInput();
+    if (!mounted) return;
 
-    await _tts.speak(_question.answer);
+    setState(() {});
+    _controller.focusFirstInput();
   }
 
-  Future<void> _replay() async {
-    await _tts.speak(_question.answer);
+  Future<void> _handleSpace(int index) async {
+    if (_controller.correct) return;
+
+    final word = _controller.question.words[index];
+
+    if (_controller.controllers[index].text.length != word.length) {
+      return;
+    }
+
+    if (index == _controller.focusNodes.length - 1) {
+      if (_controller.allInputsFilled()) {
+        await _checkAnswer();
+      }
+      return;
+    }
+
+    _controller.focusNodes[index + 1].requestFocus();
   }
 
   @override
   void dispose() {
-    _tts.dispose();
-    _disposeInputs();
+    _controller.dispose();
     super.dispose();
-  }
-
-  void _disposeInputs() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-
-    _controllers = [];
-    _focusNodes = [];
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (!_controller.hasQuestions) {
+      return _buildEmptyState();
+    }
+
+    return _buildPractice();
+  }
+
+  Widget _buildEmptyState() {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Practice')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.menu_book_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'No Practice Available',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'There are no questions available '
+                'for this selection.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Choose Again'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPractice() {
     return Scaffold(
       appBar: AppBar(title: const Text('Practice')),
       body: SafeArea(
@@ -230,28 +165,28 @@ class _PracticeScreenState extends State<PracticeScreen> {
           child: Column(
             children: [
               PracticeHeader(
-                type: _typeTitle(),
-                current: _questionIndex + 1,
-                total: practiceQuestions.length,
+                type: _controller.typeTitle(),
+                current: _controller.index + 1,
+                total: _controller.questions.length,
               ),
               const SizedBox(height: 28),
-              AudioButton(onPressed: _replay),
+              AudioButton(onPressed: _controller.replay),
               const SizedBox(height: 40),
               PracticeInputs(
-                question: _question,
-                controllers: _controllers,
-                focusNodes: _focusNodes,
-                enabled: !_correct,
-                isChecked: _checked,
-                onChanged: _handleChanged,
-                onSubmitted: _handleSubmitted,
-                onSpacePressed: _handleSpacePressed,
+                question: _controller.question,
+                controllers: _controller.controllers,
+                focusNodes: _controller.focusNodes,
+                enabled: !_controller.correct,
+                isChecked: _controller.checked,
+                onChanged: (_, __) {},
+                onSubmitted: (_, __) => _checkAnswer(),
+                onSpacePressed: _handleSpace,
               ),
               const SizedBox(height: 36),
-              if (!_correct) _buildCheckButton(),
-              if (_checked) ...[
+              if (!_controller.correct) _buildCheckButton(),
+              if (_controller.checked) ...[
                 const SizedBox(height: 24),
-                AnswerResult(correct: _correct),
+                AnswerResult(correct: _controller.correct),
               ],
             ],
           ),

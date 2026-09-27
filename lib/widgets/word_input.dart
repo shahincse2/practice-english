@@ -38,12 +38,15 @@ class WordInput extends StatelessWidget {
           controller: controller,
           focusNode: focusNode,
           enabled: enabled,
-          maxLength: target.length,
+          maxLength: target.length + 1,
           textAlign: TextAlign.center,
           textInputAction: TextInputAction.next,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
+            _WordInputFormatter(
+              maxLetters: target.length,
+              onSpace: onSpacePressed,
+            ),
           ],
           onChanged: onChanged,
           onSubmitted: onSubmitted,
@@ -72,6 +75,47 @@ class WordInput extends StatelessWidget {
   UnderlineInputBorder _border(Color color, {double width = 1}) {
     return UnderlineInputBorder(
       borderSide: BorderSide(color: color, width: width),
+    );
+  }
+}
+
+class _WordInputFormatter extends TextInputFormatter {
+  _WordInputFormatter({required this.maxLetters, required this.onSpace});
+
+  final int maxLetters;
+  final VoidCallback onSpace;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final value = newValue.text;
+
+    if (value.contains(' ')) {
+      final beforeSpace = value.split(' ').first;
+
+      if (beforeSpace.length == maxLetters) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onSpace();
+        });
+      }
+
+      return newValue.copyWith(
+        text: beforeSpace,
+        selection: TextSelection.collapsed(offset: beforeSpace.length),
+      );
+    }
+
+    final lettersOnly = value.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+
+    if (lettersOnly.length > maxLetters) {
+      return oldValue;
+    }
+
+    return newValue.copyWith(
+      text: lettersOnly,
+      selection: TextSelection.collapsed(offset: lettersOnly.length),
     );
   }
 }
