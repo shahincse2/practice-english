@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:practice_english/screens/practice_level_screen.dart';
 
-import '../data/datasources/json_practice_data_source.dart';
+import '../data/datasources/default_practice_data_source.dart';
 import '../data/practice_catalog.dart';
 import '../data/repositories/practice_repository_impl.dart';
 import '../models/practice_level.dart';
@@ -16,7 +16,7 @@ class PracticeSetupScreen extends StatefulWidget {
 }
 
 class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
-  final _repository = PracticeRepositoryImpl(const JsonPracticeDataSource());
+  final _repository = PracticeRepositoryImpl(defaultPracticeDataSource());
 
   Map<String, int> _questionCounts = {};
   bool _loading = true;

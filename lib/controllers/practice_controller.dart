@@ -1,58 +1,70 @@
 import 'package:flutter/material.dart';
 
 import '../core/services/answer_sound_service.dart';
+import '../core/services/practice_history_service.dart';
+import '../core/services/practice_stats_service.dart';
 import '../core/services/text_to_speech_service.dart';
 import '../data/repositories/practice_repository.dart';
 import '../models/practice_question.dart';
 import '../models/practice_type.dart';
+import 'practice_input_group.dart';
 
 class PracticeController {
   PracticeController(this.repository);
 
   final PracticeRepository repository;
-  final TextToSpeechService tts = TextToSpeechService();
-  final AnswerSoundService answerSound = AnswerSoundService();
+  final tts = TextToSpeechService();
+  final answerSound = AnswerSoundService();
+  final stats = PracticeStatsService.instance;
+  final history = PracticeHistoryService.instance;
+  final inputs = PracticeInputGroup();
 
   List<PracticeQuestion> questions = [];
   int index = 0;
+  int wrongAttempts = 0;
   bool checked = false;
   bool correct = false;
+  bool answerRevealed = false;
 
-  List<TextEditingController> controllers = [];
-  List<FocusNode> focusNodes = [];
+  List<TextEditingController> get controllers => inputs.controllers;
+  List<FocusNode> get focusNodes => inputs.focusNodes;
 
   bool get hasQuestions => questions.isNotEmpty;
+  bool get canShowAnswer => wrongAttempts >= 3 && !correct;
+
+  /// Number of steps in the current lesson (0 when not in a lesson).
+  int get lessonTotal {
+    final id = question.lessonId;
+    if (id == null) return 0;
+
+    return questions.where((item) => item.lessonId == id).length;
+  }
 
   PracticeQuestion get question => questions[index];
 
-  Future<void> initialize({String? segment, String? level}) async {
-    questions = await repository.getQuestions(segment: segment, level: level);
+  Future<void> initialize({
+    String? segment,
+    String? level,
+  }) async {
+    questions = await repository.getQuestions(
+      segment: segment,
+      level: level,
+    );
+
+    await stats.initialize();
+    await history.initialize();
 
     if (!hasQuestions) return;
 
-    _createInputs();
+    inputs.rebuild(question.words.length);
     await answerSound.initialize();
     await tts.initialize();
     await tts.speak(question.answer);
   }
 
-  void _createInputs() {
-    _disposeInputs();
+  void focusFirstInput() => inputs.focusFirst();
 
-    controllers = List.generate(
-      question.words.length,
-      (_) => TextEditingController(),
-    );
-
-    focusNodes = List.generate(question.words.length, (_) => FocusNode());
-  }
-
-  void focusFirstInput() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (focusNodes.isEmpty) return;
-      focusNodes.first.requestFocus();
-    });
-  }
+  void releaseRetiredInputs() => inputs.disposeRetired();
 
   String typeTitle() {
     switch (question.type) {
@@ -65,36 +77,40 @@ class PracticeController {
     }
   }
 
-  bool allInputsFilled() {
-    for (var i = 0; i < question.words.length; i++) {
-      if (controllers[i].text.length != question.words[i].length) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool allInputsFilled() => inputs.allFilled(question.words);
 
-  bool isCorrectAnswer() {
-    for (var i = 0; i < question.words.length; i++) {
-      final expected = question.words[i].toLowerCase();
-      final actual = controllers[i].text.trim().toLowerCase();
+  bool isCorrectAnswer() => inputs.matches(question.words);
 
-      if (expected != actual) return false;
-    }
-    return true;
-  }
+  String get currentInput => inputs.text;
 
   Future<void> checkAnswer() async {
+    if (correct || answerRevealed) return;
+
     final value = isCorrectAnswer();
 
     if (value) {
       await answerSound.playCorrect();
     } else {
       await answerSound.playWrong();
+      wrongAttempts++;
     }
+
+    await stats.recordAttempt(question.type, value);
+    await history.recordAttempt(
+      question,
+      currentInput,
+      value,
+    );
 
     checked = true;
     correct = value;
+  }
+
+  Future<void> revealAnswer() async {
+    if (!canShowAnswer) return;
+
+    answerRevealed = true;
+    await history.markAnswerRevealed(question);
   }
 
   Future<void> nextQuestion() async {
@@ -103,33 +119,20 @@ class PracticeController {
     if (index >= questions.length - 1) return;
 
     index++;
+    wrongAttempts = 0;
     checked = false;
     correct = false;
-    _createInputs();
+    answerRevealed = false;
 
+    inputs.rebuild(question.words.length);
     await tts.speak(question.answer);
   }
 
-  Future<void> replay() {
-    return tts.speak(question.answer);
-  }
+  Future<void> replay() => tts.speak(question.answer);
 
   void dispose() {
     tts.dispose();
     answerSound.dispose();
-    _disposeInputs();
-  }
-
-  void _disposeInputs() {
-    for (final controller in controllers) {
-      controller.dispose();
-    }
-
-    for (final node in focusNodes) {
-      node.dispose();
-    }
-
-    controllers = [];
-    focusNodes = [];
+    inputs.dispose();
   }
 }

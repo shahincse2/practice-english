@@ -9,15 +9,27 @@ class PracticeQuestion {
     required this.level,
     required this.type,
     required this.answer,
+    this.translations = const {},
+    this.lessonId,
+    this.step,
+    this.image,
   });
 
   factory PracticeQuestion.fromJson(Map<String, dynamic> json) {
+    final rawTranslations =
+        json['translations'] as Map<String, dynamic>? ?? {};
     return PracticeQuestion(
       id: json['id'] as String,
       segment: PracticeSegment.values.byName(json['segment'] as String),
       level: PracticeLevel.values.byName(json['level'] as String),
       type: PracticeType.values.byName(json['type'] as String),
       answer: json['answer'] as String,
+      translations: rawTranslations.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
+      lessonId: json['lessonId'] as String?,
+      step: json['step'] as int?,
+      image: json['image'] as String?,
     );
   }
 
@@ -26,18 +38,24 @@ class PracticeQuestion {
   final PracticeLevel level;
   final PracticeType type;
   final String answer;
+  final Map<String, String> translations;
 
-  List<String> get words {
-    return answer.trim().split(RegExp(r'\s+'));
-  }
+  /// Set only for steps that belong to a guided lesson.
+  final String? lessonId;
+  final int? step;
+  final String? image;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'segment': segment.name,
-      'level': level.name,
-      'type': type.name,
-      'answer': answer,
-    };
-  }
+  List<String> get words => answer.trim().split(RegExp(r'\s+'));
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'segment': segment.name,
+        'level': level.name,
+        'type': type.name,
+        'answer': answer,
+        'translations': translations,
+        if (lessonId != null) 'lessonId': lessonId,
+        if (step != null) 'step': step,
+        if (image != null) 'image': image,
+      };
 }

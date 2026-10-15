@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "lessons": [
+    {
+      "lessonId": "school_class6_lesson_001",
+      "segment": "school",
+      "level": "class6",
+      "steps": [
+        { "type": "word", "answer": "boy", "image": "boy.webp",
+          "translations": { "bn": "ছেলে" } },
+        { "type": "word", "answer": "little",
+          "translations": { "bn": "ছোট" } },
+        { "type": "phrase", "answer": "The little boy",
+          "translations": { "bn": "ছোট ছেলেটি" } },
+        { "type": "phrase", "answer": "The little boy reads",
+          "translations": { "bn": "ছোট ছেলেটি পড়ে" } },
+        { "type": "word", "answer": "interesting",
+          "translations": { "bn": "মজার" } },
+        { "type": "word", "answer": "storybook",
+          "translations": { "bn": "গল্পের বই" } },
+        { "type": "phrase", "answer": "an interesting storybook",
+          "translations": { "bn": "একটি মজার গল্পের বই" } },
+        { "type": "sentence",
+          "answer": "The little boy reads an interesting storybook",
+          "translations": { "bn": "ছোট ছেলেটি একটি মজার গল্পের বই পড়ে" } },
+        { "type": "word", "answer": "school",
+          "translations": { "bn": "স্কুল" } },
+        { "type": "word", "answer": "library",
+          "translations": { "bn": "পাঠাগার" } },
+        { "type": "phrase", "answer": "school library",
+          "translations": { "bn": "স্কুলের পাঠাগার" } },
+        { "type": "word", "answer": "every",
+          "translations": { "bn": "প্রতি" } },
+        { "type": "word", "answer": "afternoon",
+          "translations": { "bn": "বিকেলবেলা" } },
+        { "type": "phrase",
+          "answer": "in the school library every afternoon",
+          "translations": { "bn": "প্রতি বিকেলে স্কুলের পাঠাগারে" } },
+        { "type": "sentence",
+          "answer": "The little boy reads an interesting storybook in the school library every afternoon",
+          "translations": { "bn": "ছোট ছেলেটি প্রতি বিকেলে স্কুলের পাঠাগারে একটি মজার গল্পের বই পড়ে" } }
+      ]
+    }
+  ]
+}

@@ -4,9 +4,11 @@ import '../core/services/answer_sound_service.dart';
 import '../core/services/audio_settings_service.dart';
 import '../core/services/text_to_speech_service.dart';
 import '../models/audio_settings.dart';
+import '../widgets/loading_scaffold.dart';
 import '../widgets/settings_audio_section.dart';
+import '../widgets/settings_voice_section.dart';
+import '../widgets/translation_settings_section.dart';
 import '../widgets/theme_menu.dart';
-import '../widgets/voice_carousel.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -41,14 +43,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!mounted) return;
 
-    final selectedIndex = voices.indexWhere(
-      (voice) => voice['name'] == settings.voiceName,
-    );
-
     setState(() {
       _settings = settings;
       _voices = voices;
-      _currentVoiceIndex = selectedIndex >= 0 ? selectedIndex : 0;
+      _currentVoiceIndex = selectedVoiceIndex(voices, settings.voiceName);
       _loading = false;
     });
   }
@@ -73,9 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _store.save(settings);
     await _tts.applySettings(settings);
 
-    if (mounted) {
-      setState(() => _settings = settings);
-    }
+    if (mounted) setState(() => _settings = settings);
   }
 
   Future<void> _update(
@@ -119,9 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (_loading) return const LoadingScaffold();
 
     return Scaffold(
       appBar: AppBar(
@@ -131,37 +125,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          const Center(
-            child: Text(
-              'Voice',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
+          SettingsVoiceSection(
+            voices: _voices,
+            selectedName: _settings.voiceName,
+            onPageChanged: (index) => _currentVoiceIndex = index,
+            onPreview: _preview,
+            onUseVoice: _selectCurrentVoice,
           ),
-          const SizedBox(height: 12),
-          if (_voices.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: Text('No English voices found')),
-            )
-          else ...[
-            VoiceCarousel(
-              voices: _voices,
-              selectedName: _settings.voiceName,
-              onPageChanged: (index) {
-                _currentVoiceIndex = index;
-              },
-              onPreview: _preview,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: FilledButton(
-                onPressed: _selectCurrentVoice,
-                child: const Text('Use this voice'),
-              ),
-            ),
-          ],
+          const SizedBox(height: 20),
+          const TranslationSettingsSection(),
           const SizedBox(height: 20),
           SettingsAudioSection(
             settings: _settings,

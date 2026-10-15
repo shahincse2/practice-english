@@ -14,7 +14,7 @@ class EnglishPracticeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _themeController,
-      builder: (_, __) {
+      builder: (_, _) {
         return MaterialApp(
           title: 'English Practice',
           debugShowCheckedModeBanner: false,
