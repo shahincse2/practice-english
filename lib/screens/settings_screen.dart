@@ -5,6 +5,7 @@ import '../core/services/audio_settings_service.dart';
 import '../core/services/text_to_speech_service.dart';
 import '../models/audio_settings.dart';
 import '../widgets/loading_scaffold.dart';
+import '../widgets/privacy_settings_section.dart';
 import '../widgets/settings_audio_section.dart';
 import '../widgets/settings_voice_section.dart';
 import '../widgets/translation_settings_section.dart';
@@ -141,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onCorrectVolumeChanged: _changeCorrectVolume,
             onWrongVolumeChanged: _changeWrongVolume,
           ),
+          const PrivacySettingsSection(),
         ],
       ),
     );

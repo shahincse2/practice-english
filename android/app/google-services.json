@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "360787304690",
+    "project_id": "practice-english-e2e24",
+    "storage_bucket": "practice-english-e2e24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360787304690:android:b9835dbe732549c186706b",
+        "android_client_info": {
+          "package_name": "com.algorisesoft.practiceenglish"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-9kz2vFXCh0Zt11qCFnRQrKsW_Z3ITRQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

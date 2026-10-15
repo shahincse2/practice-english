@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../controllers/practice_controller.dart';
 import '../core/services/interstitial_ad_service.dart';
 import '../core/services/practice_session_service.dart';
+import '../core/services/telemetry_service.dart';
 import '../core/utils/run_once.dart';
 import '../data/datasources/default_practice_data_source.dart';
 import '../data/repositories/practice_repository_impl.dart';
+import '../models/practice_segment.dart';
 import '../widgets/loading_scaffold.dart';
 import '../widgets/practice_empty_state.dart';
 import '../widgets/practice_question_view.dart';
@@ -24,6 +28,7 @@ class PracticeScreen extends StatefulWidget {
 class _PracticeScreenState extends State<PracticeScreen> {
   late final PracticeController _controller;
   final _sessions = PracticeSessionService.instance;
+  final _telemetry = TelemetryService.instance;
   final _check = RunOnce();
   final _next = RunOnce();
   bool _loading = true;
@@ -31,6 +36,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void initState() {
     super.initState();
+    _telemetry.setKidsMode(widget.segment == PracticeSegment.kids.name);
     _controller = PracticeController(
       PracticeRepositoryImpl(defaultPracticeDataSource()),
     );
@@ -72,6 +78,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Future<void> _performNext() async {
     if (_controller.index >= _controller.questions.length - 1) {
       await _sessions.recordCompletedSession();
+      unawaited(_telemetry.sessionCompleted(widget.segment, widget.level));
       await InterstitialAdService.instance.showAfterCompletedSession(
         _sessions.completedSessions.value,
       );
@@ -112,6 +119,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _telemetry.setKidsMode(false);
     super.dispose();
   }
 

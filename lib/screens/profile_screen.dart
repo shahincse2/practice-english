@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../core/auth/default_auth_service.dart';
 import '../core/services/practice_session_service.dart';
 import '../core/services/practice_stats_service.dart';
 import '../core/services/user_profile_service.dart';
 import '../models/user_profile.dart';
+import '../widgets/account_section.dart';
 import '../widgets/profile_actions_card.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_information_card.dart';
 import '../widgets/profile_learning_overview.dart';
 import 'edit_profile_screen.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _service = UserProfileService.instance;
   final _stats = PracticeStatsService.instance;
   final _sessions = PracticeSessionService.instance;
+  final _auth = defaultAuthService();
 
   UserProfile _profile = const UserProfile();
   bool _loading = true;
@@ -51,6 +55,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (_) =>
             EditProfileScreen(profile: _profile, onSave: _saveProfile),
       ),
+    );
+  }
+
+  Future<void> _openLogin() async {
+    final auth = _auth;
+    if (auth == null) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LoginScreen(authService: auth)),
     );
   }
 
@@ -97,6 +111,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _title('Profile'),
           const SizedBox(height: 8),
           ProfileActionsCard(onEdit: _editProfile),
+          const SizedBox(height: 24),
+          _title('Account'),
+          const SizedBox(height: 8),
+          AccountSection(authService: _auth, onSignIn: _openLogin),
         ],
       ),
     );
