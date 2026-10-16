@@ -37,6 +37,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void initState() {
     super.initState();
     _telemetry.setKidsMode(widget.segment == PracticeSegment.kids.name);
+    InterstitialAdService.instance.prepare(segment: widget.segment);
     _controller = PracticeController(
       PracticeRepositoryImpl(defaultPracticeDataSource()),
     );
@@ -81,6 +82,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       unawaited(_telemetry.sessionCompleted(widget.segment, widget.level));
       await InterstitialAdService.instance.showAfterCompletedSession(
         _sessions.completedSessions.value,
+        segment: widget.segment,
       );
 
       if (!mounted) return;

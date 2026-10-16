@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:practice_english/screens/practice_level_screen.dart';
 
+import '../core/audience/audience_service.dart';
 import '../data/datasources/default_practice_data_source.dart';
 import '../data/practice_catalog.dart';
 import '../data/repositories/practice_repository_impl.dart';
@@ -17,6 +18,7 @@ class PracticeSetupScreen extends StatefulWidget {
 
 class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
   final _repository = PracticeRepositoryImpl(defaultPracticeDataSource());
+  final _audience = AudienceService.instance.current;
 
   Map<String, int> _questionCounts = {};
   bool _loading = true;
@@ -49,7 +51,7 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
   }
 
   int _segmentQuestionCount(PracticeSegment segment) {
-    return PracticeCatalog.levels[segment]!.fold(
+    return _audience.levelsFor(segment).fold(
       0,
       (total, level) => total + _questionCount(segment, level),
     );
@@ -97,7 +99,7 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: PracticeSegment.values.length,
+      itemCount: _audience.segments.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
@@ -105,7 +107,7 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
         childAspectRatio: 1.45,
       ),
       itemBuilder: (context, index) {
-        final segment = PracticeSegment.values[index];
+        final segment = _audience.segments[index];
 
         return PracticeSelectionCard(
           title: PracticeCatalog.segmentName(segment),

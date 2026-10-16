@@ -5,6 +5,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Practice English">
 
+        <meta-data
+            android:name="firebase_data_collection_default_enabled"
+            android:value="false" />
+
         <!-- AdMob App ID: must be inside application, outside activity -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

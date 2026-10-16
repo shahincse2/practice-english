@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/audience/audience_service.dart';
 import '../core/auth/default_auth_service.dart';
 import '../core/services/practice_session_service.dart';
 import '../core/services/practice_stats_service.dart';
@@ -25,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _stats = PracticeStatsService.instance;
   final _sessions = PracticeSessionService.instance;
   final _auth = defaultAuthService();
+  final _audience = AudienceService.instance.current;
 
   UserProfile _profile = const UserProfile();
   bool _loading = true;
@@ -111,10 +113,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _title('Profile'),
           const SizedBox(height: 8),
           ProfileActionsCard(onEdit: _editProfile),
-          const SizedBox(height: 24),
-          _title('Account'),
-          const SizedBox(height: 8),
-          AccountSection(authService: _auth, onSignIn: _openLogin),
+          if (_audience.allowsSignIn) ...[
+            const SizedBox(height: 24),
+            _title('Account'),
+            const SizedBox(height: 8),
+            AccountSection(authService: _auth, onSignIn: _openLogin),
+          ],
         ],
       ),
     );

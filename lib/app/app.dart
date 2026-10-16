@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../controllers/theme_controller.dart';
 import '../models/app_theme_mode.dart';
-import '../screens/main_navigation_screen.dart';
 import 'app_theme.dart';
+import 'audience_gate.dart';
 
 class EnglishPracticeApp extends StatelessWidget {
   const EnglishPracticeApp({super.key});
@@ -21,7 +21,7 @@ class EnglishPracticeApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: _themeMode,
-          home: const MainNavigationScreen(),
+          home: const AudienceGate(),
         );
       },
     );

@@ -1,18 +1,17 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'app/app.dart';
-import 'core/firebase/firebase_bootstrap.dart';
-import 'core/services/interstitial_ad_service.dart';
-import 'core/services/telemetry_service.dart';
+import 'core/audience/audience_service.dart';
+import 'core/services/app_services.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  unawaited(InterstitialAdService.instance.initialize());
+  await AudienceService.instance.load();
 
-  final firebaseReady = await initializeFirebase();
-  await TelemetryService.instance.initialize(firebaseReady: firebaseReady);
+  // Firebase, analytics and ads start only once the age is known, and never
+  // for children (see AudienceProfile).
+  final audience = AudienceService.instance.profile.value;
+  if (audience != null) await AppServices.start(audience);
 
   runApp(const EnglishPracticeApp());
 }

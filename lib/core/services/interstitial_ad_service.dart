@@ -4,8 +4,14 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../ads/ad_configuration.dart';
+import '../ads/ad_policy.dart';
+import '../audience/audience_profile.dart';
+import '../audience/audience_service.dart';
+
 class InterstitialAdService {
-  InterstitialAdService._();
+  InterstitialAdService._({AdPolicy policy = const AdPolicy()})
+      : _policy = policy;
 
   static final instance = InterstitialAdService._();
 
@@ -18,22 +24,36 @@ class InterstitialAdService {
   static const _iosTestAdUnitId =
       'ca-app-pub-3940256099942544/4411468910';
 
+  final AdPolicy _policy;
   InterstitialAd? _ad;
   bool _initialized = false;
   bool _loading = false;
   bool _supported = false;
 
-  Future<void> initialize() async {
+  AudienceProfile get _audience => AudienceService.instance.current;
+
+  Future<void> initialize(AudienceProfile audience) async {
     _supported = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
-    if (!_supported || _initialized) return;
+    if (!_supported || !audience.allowsAds || _initialized) return;
 
     try {
+      // Age-based settings must be applied before the SDK starts.
+      await MobileAds.instance.updateRequestConfiguration(
+        AdConfiguration.forBand(audience.band),
+      );
       await MobileAds.instance.initialize();
       _initialized = true;
-      _loadAd();
     } catch (error) {
       debugPrint('Mobile Ads initialization failed: $error');
     }
+  }
+
+  /// Starts loading an ad for [segment]; does nothing where ads are not
+  /// allowed, so no ad request is ever made for children's content.
+  void prepare({required String? segment}) {
+    if (!_policy.allowsAdsFor(segment, audience: _audience)) return;
+
+    _loadAd();
   }
 
   String get _adUnitId =>
@@ -59,7 +79,11 @@ class InterstitialAdService {
     );
   }
 
-  Future<void> showAfterCompletedSession(int completedSessions) async {
+  Future<void> showAfterCompletedSession(
+    int completedSessions, {
+    required String? segment,
+  }) async {
+    if (!_policy.allowsAdsFor(segment, audience: _audience)) return;
     if (!_supported || !_initialized) return;
     if (sessionsBetweenAds < 1 ||
         completedSessions % sessionsBetweenAds != 0) {

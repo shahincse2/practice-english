@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/audience/audience_service.dart';
 import '../data/practice_catalog.dart';
 import '../models/practice_level.dart';
 import '../models/practice_segment.dart';
@@ -42,7 +43,7 @@ class PracticeLevelScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final levels = PracticeCatalog.levels[segment] ?? [];
+    final levels = AudienceService.instance.current.levelsFor(segment);
 
     return Scaffold(
       appBar: AppBar(title: Text(PracticeCatalog.segmentName(segment))),
