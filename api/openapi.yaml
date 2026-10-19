@@ -1,0 +1,381 @@
+openapi: 3.0.3
+info:
+  title: English Practice API
+  version: 1.0.0
+  description: |
+    Content is served as static, cacheable JSON packs (no sign-in needed).
+    User data (profile, sessions, leaderboard) needs a Firebase ID token:
+    `Authorization: Bearer <token>`.
+    Kids practice is never uploaded: `segment: kids` is rejected with 422.
+servers:
+  - url: https://api.example.com
+    description: Placeholder, replace when the backend is hosted.
+security:
+  - bearerAuth: []
+tags:
+  - name: Content
+  - name: Me
+  - name: Sessions
+  - name: Leaderboard
+  - name: Geo
+paths:
+  /v1/content/manifest:
+    get:
+      tags: [Content]
+      summary: List the content packs the app can download.
+      security: []
+      responses:
+        '200':
+          description: Current manifest. Send `If-None-Match` to avoid re-downloading.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Manifest' }
+        '304': { description: Not modified. }
+  /v1/me:
+    get:
+      tags: [Me]
+      summary: Get the signed-in user's profile.
+      responses:
+        '200':
+          description: Profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: 'Signed in, but no profile created yet.' }
+    put:
+      tags: [Me]
+      summary: Create or update the profile (call after the first sign-in).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileInput' }
+      responses:
+        '200':
+          description: Saved profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: Display name is already taken. }
+        '422': { $ref: '#/components/responses/Invalid' }
+    delete:
+      tags: [Me]
+      summary: Permanently delete the account and all its server-side data.
+      description: Call this first, then delete the Firebase user on the device.
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/me/stats:
+    get:
+      tags: [Me]
+      summary: Aggregated learning stats for the dashboard.
+      responses:
+        '200':
+          description: Stats.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stats' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/sessions:
+    post:
+      tags: [Sessions]
+      summary: Submit one completed practice session.
+      description: |
+        Idempotent on `clientSessionId`: re-sending the same session returns
+        the original result with 200 instead of counting it twice. Points are
+        calculated by the server, never trusted from the app.
+
+        422 codes the app must tell apart: `profile_required` (no profile yet:
+        keep the session and retry after the profile exists) and any other code
+        (the server refuses this session for good: drop it).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SessionSubmission' }
+      responses:
+        '201':
+          description: Session recorded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResult' }
+        '200':
+          description: Duplicate of an already recorded session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: The session id belongs to another account. }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { description: Too many submissions. }
+  /v1/leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Rankings. Signed-in callers also get their own rank in `me`.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - { name: period, in: query, schema: { $ref: '#/components/schemas/Period' } }
+        - { name: scope, in: query, schema: { $ref: '#/components/schemas/Scope' } }
+        - name: regionId
+          in: query
+          description: Required when `scope` is not `global`.
+          schema: { type: integer }
+        - { name: segment, in: query, schema: { $ref: '#/components/schemas/RankedSegment' } }
+        - { name: level, in: query, schema: { $ref: '#/components/schemas/Level' } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Rankings.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Leaderboard' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/geo/regions:
+    get:
+      tags: [Geo]
+      summary: Bangladesh divisions, districts and upazilas for the filters.
+      security: []
+      parameters:
+        - { name: level, in: query, required: true, schema: { $ref: '#/components/schemas/RegionLevel' } }
+        - name: parentId
+          in: query
+          description: Parent region (omit for divisions).
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Regions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Region' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Firebase ID token
+  responses:
+    Unauthorized:
+      description: Missing or invalid token.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Invalid:
+      description: The request body or parameters are not valid.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: nickname_taken }
+        message: { type: string }
+    Segment:
+      type: string
+      enum: [kids, school, academic, ielts, gre, spokenEnglish]
+    RankedSegment:
+      type: string
+      description: Kids is never ranked.
+      enum: [school, academic, ielts, gre, spokenEnglish]
+    Level:
+      type: string
+      enum: [nursery, kg, class1, class2, class3, class4, class5, class6, class7, class8, class9, class10, hsc, university, ielts, gre, spokenEnglish]
+    StepType:
+      type: string
+      enum: [word, phrase, sentence]
+    Period:
+      type: string
+      enum: [weekly, monthly, allTime]
+      default: weekly
+    Scope:
+      type: string
+      enum: [global, country, division, district, upazila]
+      default: global
+    RegionLevel:
+      type: string
+      enum: [division, district, upazila]
+    Translations:
+      type: object
+      description: Language code to text. `bn` is required.
+      required: [bn]
+      additionalProperties: { type: string }
+      example: { bn: ছেলে }
+    Manifest:
+      type: object
+      required: [contentVersion, minAppVersion, packs]
+      properties:
+        contentVersion: { type: integer }
+        minAppVersion: { type: string, example: 1.0.0 }
+        packs:
+          type: array
+          items: { $ref: '#/components/schemas/PackRef' }
+    PackRef:
+      type: object
+      required: [id, segment, level, version, url, sha256, sizeBytes]
+      properties:
+        id: { type: string, example: school_class6 }
+        segment: { $ref: '#/components/schemas/Segment' }
+        level: { $ref: '#/components/schemas/Level' }
+        version: { type: integer }
+        url: { type: string, format: uri }
+        sha256: { type: string }
+        sizeBytes: { type: integer }
+    ContentPack:
+      type: object
+      description: File behind `PackRef.url`.
+      required: [version]
+      properties:
+        version: { type: integer, enum: [1] }
+        lessons:
+          type: array
+          items: { $ref: '#/components/schemas/Lesson' }
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/SingleQuestion' }
+    Lesson:
+      type: object
+      required: [lessonId, segment, level, steps]
+      properties:
+        lessonId: { type: string, example: school_class6_lesson_001 }
+        segment: { $ref: '#/components/schemas/Segment' }
+        level: { $ref: '#/components/schemas/Level' }
+        steps:
+          type: array
+          minItems: 2
+          maxItems: 99
+          items: { $ref: '#/components/schemas/LessonStep' }
+    LessonStep:
+      type: object
+      required: [type, answer, translations]
+      properties:
+        type: { $ref: '#/components/schemas/StepType' }
+        answer: { type: string }
+        image: { type: string, example: boy.webp }
+        translations: { $ref: '#/components/schemas/Translations' }
+    SingleQuestion:
+      type: object
+      required: [id, segment, level, type, answer]
+      properties:
+        id: { type: string, example: kids_kg_word_001 }
+        segment: { $ref: '#/components/schemas/Segment' }
+        level: { $ref: '#/components/schemas/Level' }
+        type: { $ref: '#/components/schemas/StepType' }
+        answer: { type: string }
+        translations: { $ref: '#/components/schemas/Translations' }
+    ProfileInput:
+      type: object
+      required: [displayName, confirmedAge13Plus]
+      properties:
+        displayName:
+          type: string
+          description: Public nickname. Never a real name or contact detail.
+          minLength: 3
+          maxLength: 20
+          pattern: '^[A-Za-z0-9_.-]+$'
+        confirmedAge13Plus: { type: boolean, enum: [true] }
+        upazilaId:
+          type: integer
+          nullable: true
+          description: Private. Used only to rank inside a region.
+        leaderboardVisible: { type: boolean, default: true }
+    Profile:
+      type: object
+      required: [displayName, leaderboardVisible, createdAt]
+      properties:
+        displayName: { type: string }
+        upazilaId: { type: integer, nullable: true }
+        leaderboardVisible: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    SessionItem:
+      type: object
+      required: [questionId, type, attempts, correct, revealed, timeMs, typedChars]
+      properties:
+        questionId: { type: string }
+        type: { $ref: '#/components/schemas/StepType' }
+        attempts: { type: integer, minimum: 1 }
+        correct: { type: boolean }
+        revealed: { type: boolean, description: The answer was shown. }
+        timeMs: { type: integer, minimum: 0 }
+        typedChars: { type: integer, minimum: 0 }
+    SessionSubmission:
+      type: object
+      required: [clientSessionId, segment, level, startedAt, finishedAt, items]
+      properties:
+        clientSessionId: { type: string, format: uuid }
+        segment: { $ref: '#/components/schemas/RankedSegment' }
+        level: { $ref: '#/components/schemas/Level' }
+        lessonId: { type: string, nullable: true }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items: { $ref: '#/components/schemas/SessionItem' }
+    Stats:
+      type: object
+      required: [sessionsCompleted, wordsLearned, attempts, correct, wrong, accuracy, averageWpm, streakDays, points]
+      properties:
+        sessionsCompleted: { type: integer }
+        wordsLearned: { type: integer, description: Distinct words answered correctly. }
+        attempts: { type: integer }
+        correct: { type: integer }
+        wrong: { type: integer }
+        accuracy: { type: number, description: 'Percent, 0 to 100.' }
+        averageWpm: { type: number }
+        streakDays: { type: integer }
+        points: { type: integer }
+    SessionResult:
+      type: object
+      required: [sessionId, points, correct, wrong, accuracy, wpm, stats]
+      properties:
+        sessionId: { type: string, format: uuid }
+        points: { type: integer }
+        correct: { type: integer }
+        wrong: { type: integer }
+        accuracy: { type: number }
+        wpm: { type: number }
+        stats: { $ref: '#/components/schemas/Stats' }
+    LeaderboardEntry:
+      type: object
+      required: [rank, displayName, points, streakDays, isCurrentUser]
+      properties:
+        rank: { type: integer }
+        displayName: { type: string }
+        points: { type: integer }
+        streakDays: { type: integer }
+        isCurrentUser: { type: boolean }
+    Leaderboard:
+      type: object
+      required: [period, scope, entries]
+      properties:
+        period: { $ref: '#/components/schemas/Period' }
+        scope: { $ref: '#/components/schemas/Scope' }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/LeaderboardEntry' }
+        me:
+          allOf:
+            - $ref: '#/components/schemas/LeaderboardEntry'
+          nullable: true
+          description: The caller's own rank (null when signed out or hidden).
+        nextCursor: { type: string, nullable: true }
+    Region:
+      type: object
+      required: [id, level, nameEn, nameBn]
+      properties:
+        id: { type: integer }
+        level: { $ref: '#/components/schemas/RegionLevel' }
+        parentId: { type: integer, nullable: true }
+        nameEn: { type: string }
+        nameBn: { type: string }

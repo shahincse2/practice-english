@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/api/default_account_service.dart';
 import '../core/audience/audience_service.dart';
 import '../core/auth/default_auth_service.dart';
 import '../core/services/practice_session_service.dart';
@@ -11,8 +12,8 @@ import '../widgets/profile_actions_card.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_information_card.dart';
 import '../widgets/profile_learning_overview.dart';
+import 'account_setup_flow.dart';
 import 'edit_profile_screen.dart';
-import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _sessions = PracticeSessionService.instance;
   final _auth = defaultAuthService();
   final _audience = AudienceService.instance.current;
+  final _accountService = defaultAccountProfileService();
 
   UserProfile _profile = const UserProfile();
   bool _loading = true;
@@ -60,14 +62,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _openLogin() async {
-    final auth = _auth;
-    if (auth == null) return;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => LoginScreen(authService: auth)),
-    );
+  Future<void> _openLogin() {
+    return signInAndSetup(context, auth: _auth, profiles: _accountService);
   }
 
   Future<void> _saveProfile(UserProfile profile) async {
@@ -117,7 +113,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
             _title('Account'),
             const SizedBox(height: 8),
-            AccountSection(authService: _auth, onSignIn: _openLogin),
+            AccountSection(
+              authService: _auth,
+              onSignIn: _openLogin,
+              profileService: _accountService,
+              onSetupNickname: () => ensureAccountProfile(context, _accountService),
+            ),
           ],
         ],
       ),

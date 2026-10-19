@@ -4,6 +4,7 @@ import '../core/services/answer_sound_service.dart';
 import '../core/services/practice_history_service.dart';
 import '../core/services/practice_stats_service.dart';
 import '../core/services/text_to_speech_service.dart';
+import '../core/sessions/session_recorder.dart';
 import '../data/repositories/practice_repository.dart';
 import '../models/practice_question.dart';
 import '../models/practice_type.dart';
@@ -18,6 +19,7 @@ class PracticeController {
   final stats = PracticeStatsService.instance;
   final history = PracticeHistoryService.instance;
   final inputs = PracticeInputGroup();
+  final recorder = SessionRecorder();
 
   List<PracticeQuestion> questions = [];
   int index = 0;
@@ -56,6 +58,7 @@ class PracticeController {
 
     if (!hasQuestions) return;
 
+    recorder.begin(segment: segment, level: level);
     inputs.rebuild(question.words.length);
     await answerSound.initialize();
     await tts.initialize();
@@ -87,6 +90,11 @@ class PracticeController {
     if (correct || answerRevealed) return;
 
     final value = isCorrectAnswer();
+    recorder.attempt(
+      question,
+      correct: value,
+      typedChars: currentInput.length,
+    );
 
     if (value) {
       await answerSound.playCorrect();
@@ -110,6 +118,7 @@ class PracticeController {
     if (!canShowAnswer) return;
 
     answerRevealed = true;
+    recorder.reveal(question);
     await history.markAnswerRevealed(question);
   }
 
@@ -123,6 +132,7 @@ class PracticeController {
     checked = false;
     correct = false;
     answerRevealed = false;
+    recorder.nextQuestion();
 
     inputs.rebuild(question.words.length);
     await tts.speak(question.answer);

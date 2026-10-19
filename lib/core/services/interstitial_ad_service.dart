@@ -10,8 +10,8 @@ import '../audience/audience_profile.dart';
 import '../audience/audience_service.dart';
 
 class InterstitialAdService {
-  InterstitialAdService._({AdPolicy policy = const AdPolicy()})
-      : _policy = policy;
+  // InterstitialAdService._([this._policy = const AdPolicy()]);
+  InterstitialAdService._() : _policy = const AdPolicy();
 
   static final instance = InterstitialAdService._();
 

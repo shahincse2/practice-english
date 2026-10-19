@@ -6,6 +6,7 @@ import '../controllers/practice_controller.dart';
 import '../core/services/interstitial_ad_service.dart';
 import '../core/services/practice_session_service.dart';
 import '../core/services/telemetry_service.dart';
+import '../core/sessions/session_reporter.dart';
 import '../core/utils/run_once.dart';
 import '../data/datasources/default_practice_data_source.dart';
 import '../data/repositories/practice_repository_impl.dart';
@@ -79,7 +80,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Future<void> _performNext() async {
     if (_controller.index >= _controller.questions.length - 1) {
       await _sessions.recordCompletedSession();
-      unawaited(_telemetry.sessionCompleted(widget.segment, widget.level));
+      unawaited(SessionReporter.instance.report(_controller.recorder));
       await InterstitialAdService.instance.showAfterCompletedSession(
         _sessions.completedSessions.value,
         segment: widget.segment,
